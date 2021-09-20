@@ -36,7 +36,7 @@ struct ContentView: View {
     
     @FullSecureRequired
     func getSecretCards() {
-        AuthRequiredBlock {
+        SecurityRequiredBlock {
             print("Getting secret cards.")
             CardService.shared.getCreditCards { cards in
                 self.cards = cards
@@ -46,18 +46,13 @@ struct ContentView: View {
             print("Couldn't request secret cards.")
         }
     }
-    
-    @FullSecureRequired
-    func some() {
-        
-    }
 }
 
-class AuthRequiredBlock {
+final class SecurityRequiredBlock {
     typealias AuthBlock = () -> Void
     var authSuccessBlock: AuthBlock
     var authFailedBlock: AuthBlock
-
+    
     init(authSuccessBlock: @escaping AuthBlock, authFailedBlock: @escaping AuthBlock) {
         self.authSuccessBlock = authSuccessBlock
         self.authFailedBlock = authFailedBlock
@@ -72,37 +67,41 @@ enum SecurityLevel {
 
 @resultBuilder
 struct FullSecureRequired {
-    static func buildBlock(_ components: AuthRequiredBlock...) {
+    static func buildBlock(_ components: SecurityRequiredBlock...) {
+        guard let blockToRunSecurely = components.first else { return }
+        
         guard ContentView.currentSecurityLevel == .fullSecure else {
             print("Not full secure, opening auth page.")
             LoginManager.shared.fullSecureLogin {
-                components.first?.authSuccessBlock()
+                blockToRunSecurely.authSuccessBlock()
             } onFail: {
-                components.first?.authFailedBlock()
+                blockToRunSecurely.authFailedBlock()
             }
             return
         }
         
         print("Already full secure go ahead.")
-        components.first?.authSuccessBlock()
+        blockToRunSecurely.authSuccessBlock()
     }
 }
 
 @resultBuilder
 struct SemiSecureRequired {
-    static func buildBlock(_ components: AuthRequiredBlock...) {
+    static func buildBlock(_ components: SecurityRequiredBlock...) {
+        guard let blockToRunSecurely = components.first else { return }
+        
         guard ContentView.currentSecurityLevel == .semiSecure else {
             print("Nope semi secure, opening auth page.")
             LoginManager.shared.fullSecureLogin {
-                components.first?.authSuccessBlock()
+                blockToRunSecurely.authSuccessBlock()
             } onFail: {
-                components.first?.authFailedBlock()
+                blockToRunSecurely.authFailedBlock()
             }
             return
         }
         
         print("Already semi secure go ahead.")
-        components.first?.authSuccessBlock()
+        blockToRunSecurely.authSuccessBlock()
     }
 }
 
