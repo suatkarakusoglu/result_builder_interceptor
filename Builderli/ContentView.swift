@@ -92,7 +92,7 @@ struct SemiSecureRequired {
         
         guard ContentView.currentSecurityLevel == .semiSecure else {
             print("Nope semi secure, opening auth page.")
-            LoginManager.shared.fullSecureLogin {
+            LoginManager.shared.semiSecureLogin {
                 blockToRunSecurely.authSuccessBlock()
             } onFail: {
                 blockToRunSecurely.authFailedBlock()
